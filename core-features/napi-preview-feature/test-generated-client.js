@@ -1,13 +1,18 @@
 // @ts-check
 const PrismaClient = require('@prisma/client').PrismaClient
 const fs = require('fs')
+
 let data = {}
+
 async function main() {
   const prisma = new PrismaClient()
   await prisma.$connect()
+
   await prisma.user.deleteMany()
+
   const users = await prisma.user.findMany()
   data['users.findMany'] = users
+
   const created = await prisma.user.create({
     data: {
       id: 1,
@@ -41,6 +46,7 @@ async function main() {
   }
 
   await prisma.$disconnect()
+
   fs.writeFileSync('./data.json', JSON.stringify(data, undefined, 2), {
     encoding: 'utf8',
   })

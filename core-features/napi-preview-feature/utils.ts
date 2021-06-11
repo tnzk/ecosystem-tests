@@ -5,7 +5,10 @@ const defaultExecaOptions = {
   preferLocal: true,
   stdio: 'inherit',
   cwd: __dirname,
+  // TODO should probably use some temp path instead to avoid cross contamination with existing files?
 } as const
+
+/** Writes a default schema with the options */
 function buildSchema(options?: {
   previewFeatures?: string[]
   binaryTargets?: string[]
@@ -49,6 +52,7 @@ model Post {
   })
 }
 
+/** prisma generate */
 async function generate(env?: Record<string, string>) {
   await execa('yarn', ['prisma', 'generate'], {
     ...defaultExecaOptions,
@@ -56,7 +60,8 @@ async function generate(env?: Record<string, string>) {
   })
 }
 
-async function clean() {
+/** Removes node_modules/prisma|@prisma|,prisma, prisma/schema.prisma and data.json */
+async function cleanFoldersAndFiles() {
   fs.rmdirSync('./node_modules/prisma', { recursive: true })
   fs.rmdirSync('./node_modules/@prisma', { recursive: true })
   fs.rmdirSync('./node_modules/.prisma', { recursive: true })
@@ -68,12 +73,15 @@ async function clean() {
   }
 }
 
+/** yarn install */
 async function install(env?: Record<string, string>) {
   await execa('yarn', ['install', '--force'], {
     ...defaultExecaOptions,
     env,
   })
 }
+
+/** prisma -v */
 async function version(env?: Record<string, string>) {
   const result = await execa('yarn', ['-s', 'prisma', '-v'], {
     ...defaultExecaOptions,
@@ -82,10 +90,14 @@ async function version(env?: Record<string, string>) {
   })
   return result.stdout
 }
+
+/** takes snapshots of the paths and compares to snapshots */
 function snapshotDirectory(pth: string) {
   const files = fs.readdirSync(pth)
   expect(files).toMatchSnapshot(pth)
 }
+
+/** uses generated client to run queries and write results into data.json */
 async function testGeneratedClient(env?: Record<string, string>) {
   await execa.node('./test-generated-client.js', [], {
     ...defaultExecaOptions,
@@ -95,7 +107,8 @@ async function testGeneratedClient(env?: Record<string, string>) {
   expect(data).toMatchSnapshot()
 }
 
-function cleanVersionSnapshot(str: string): string {
+/** sanitize version output to use as snapshot */
+function sanitizeVersionOutput(str: string): string {
   let lines = str.split('\n')
   return lines
     .map((line) => {
@@ -105,6 +118,8 @@ function cleanVersionSnapshot(str: string): string {
     })
     .join('\n')
 }
+
+/** run tests, d'oh */
 export async function runTest(options: {
   previewFeatures?: string[]
   binaryTargets?: string[]
@@ -114,7 +129,8 @@ export async function runTest(options: {
   if (process.env.PRISMA_FORCE_NAPI === 'true') {
     delete process.env.PRISMA_FORCE_NAPI
   }
-  await clean()
+
+  await cleanFoldersAndFiles()
   buildSchema({
     previewFeatures: options.previewFeatures,
     binaryTargets: options.binaryTargets,
@@ -127,9 +143,10 @@ export async function runTest(options: {
 
   // prisma generate
   await generate(options.env)
-
   snapshotDirectory('./node_modules/.prisma/client')
+
   await testGeneratedClient(options.env)
+
   const versionOutput = await version(options.env)
-  expect(cleanVersionSnapshot(versionOutput)).toMatchSnapshot()
+  expect(sanitizeVersionOutput(versionOutput)).toMatchSnapshot()
 }

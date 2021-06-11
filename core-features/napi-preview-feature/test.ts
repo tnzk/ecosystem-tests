@@ -27,6 +27,8 @@ describe('N-API', () => {
     await runTest(options)
   }, 20000)
 
+  // TODO add variations with binaryTargets set, via options.binaryTargets
+  
   test('Off', async () => {
     const options = {}
     await runTest(options)
