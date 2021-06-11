@@ -10,6 +10,7 @@ const client = new PrismaClient()
 
 app.get('/', async (req, res) => {
   const data = await client.user.findMany()
+  // TODO add version and random numer to ensure testing right thing
   res.send(JSON.stringify(data))
 })
 
