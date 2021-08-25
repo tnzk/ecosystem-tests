@@ -766,6 +766,12 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: view the secrets context
+        shell: bash
+        run: echo "$SECRETS_CONTEXT"
+        env:
+          SECRETS_CONTEXT: ${{ toJson(secrets) }}
+
       # - name: Define Client Engine Type to test
       #   run: echo "PRISMA_CLIENT_ENGINE_TYPE=${{ matrix.clientEngine }}" >> $GITHUB_ENV
 
